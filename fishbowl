@@ -1,0 +1,57 @@
+#!/bin/sh
+# source function library
+. /etc/init.d/functions
+
+title=fishbowl
+program="python /usr/bin/ipython"
+parameters="notebook --profile=nbserver --ipython-dir=/home/root/.ipython/"
+lockfile=/var/lock/subsys/$title
+pidfile=/var/run/fishbowl.pid
+
+start(){
+        # Start the daemon
+        echo -n $"Starting $title: "
+        start-stop-daemon -S -m -b -p $pidfile -x $program -- $parameters
+        export PYTHONSTARTUP="/home/root/.pythonrc"
+        RETURN=$?
+        echo
+
+        # Check for error code in return value
+        [ $RETURN -eq 0 ] && touch $lockfile
+        insmod /lib/modules/$(uname -r)/extra/low-speed-spidev.ko
+        return $RETURN
+}
+
+stop(){
+        echo -n $"Stopping $title: "
+        start-stop-daemon -K -p $pidfile -x $program
+        RETURN=$?
+        echo
+
+        # Check for error code in return value
+        [ $RETURN -eq 0 ] && rm -f $lockfile
+        rmmod low_speed_spidev
+        rmmod spidev
+        return $RETURN
+}
+case "$1" in
+        start)
+                start
+                ;;
+        stop)
+                stop
+                ;;
+        status)
+                status $title
+                exit $?
+                ;;
+        restart)
+                stop
+                start
+                ;;
+        *)
+                echo "Usage: /etc/init.d/fishbowl {start|stop|status}"
+                exit 1
+                ;;
+esac
+
