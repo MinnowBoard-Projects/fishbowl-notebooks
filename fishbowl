@@ -34,6 +34,11 @@ stop(){
         rmmod spidev
         return $RETURN
 }
+status(){
+	[ ! -f $lockfile ] && echo "fishbowl is not running"
+	[ -f $lockfile ] && echo "fishbowl is running: " | tr -d "\n" && cat $pidfile  
+}
+	
 case "$1" in
         start)
                 start
@@ -42,7 +47,7 @@ case "$1" in
                 stop
                 ;;
         status)
-                status $title
+                status 
                 exit $?
                 ;;
         restart)
